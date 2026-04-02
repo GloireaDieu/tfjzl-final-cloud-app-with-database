@@ -2,54 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Exam Result - {{ course.name }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     {% load static %}
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'onlinecourse/course.css' %}">
 </head>
 <body>
 
- <nav class="navbar navbar-light bg-light">
-    <div class="container-fluid">
-        <div class="navbar-header">
-              <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
-        </div>
-        <ul class="nav navbar-nav navbar-right">
-            {% if user.is_authenticated %}
-            <li>
-                <a class="btn btn-link" href="#">{{ user.first_name }}({{ user.username }})</a>
-                <a class="btn btn-link" href="{% url 'onlinecourse:logout' %}">Logout</a>
-            </li>
-            {% else %}
-            <li>
-                <form class="form-inline" action="{% url 'onlinecourse:login' %}" method="post">
-                    {% csrf_token %}
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Username" name="username" >
-                        <input type="password" class="form-control" placeholder="Username" name="psw" >
-                        <button class="btn btn-primary" type="submit">Login</button>
-                        <a class="btn btn-link" href="{% url 'onlinecourse:registration' %}">Sign Up</a>
-                    </div>
-                </form>
-            </li>
-            {% endif %}
-        </ul>
-    </div>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Home</a>
 </nav>
 
-<div class="container-fluid">
-    {% if grade > 80 %}
+<div class="container mt-4">
+
+    <!-- Pass or Fail message -->
+    {% if grade >= 80 %}
     <div class="alert alert-success">
-       <!--HINT Display passed info -->
+        <b>Congratulations, {{ request.user.first_name }}!</b>
+        You have passed the exam and completed the course with score {{ grade }} / 100
     </div>
-        {% else %}
-        <div class="alert alert-danger">
-            <!--HINT Display failed info -->
+    {% else %}
+    <div class="alert alert-danger">
+        <b>Failed</b> Sorry, {{ request.user.first_name }}!
+        You have failed the exam with score {{ grade }} / 100
+    </div>
+
+    <!-- Re-test link shown only if failed -->
+    <a href="{% url 'onlinecourse:course_details' course.id %}"
+       class="text-danger">Re-test</a>
+    {% endif %}
+
+    <!-- Exam Results breakdown -->
+    <h4 class="mt-4"><b>Exam results</b></h4>
+
+    {% for question in course.question_set.all %}
+    <div class="card mt-1">
+        <div class="card-header">
+            <h5>{{ question.content }}</h5>
         </div>
-        <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
-        {% endif %}
-        <div class="card-columns-vertical mt-1">
-        <h5 class="">Exam results</h5>
-            <!--HINT Display exam results-->
+        <div class="form-group p-3">
+            {% for choice in question.choice_set.all %}
+            <div class="form-check">
+                {% if choice.is_correct and choice in choices %}
+                <!-- Correct answer and learner selected it -->
+                <div class="text-success">Correct answer: {{ choice.content }}</div>
+                {% else %}{% if choice.is_correct and not choice in choices %}
+                <!-- Correct answer but learner did NOT select it -->
+                <div class="text-warning">Not selected: {{ choice.content }}</div>
+                {% else %}{% if not choice.is_correct and choice in choices %}
+                <!-- Wrong answer and learner selected it -->
+                <div class="text-danger">Wrong answer: {{ choice.content }}</div>
+                {% else %}
+                <!-- Wrong answer and learner did not select it -->
+                <div>{{ choice.content }}</div>
+                {% endif %}{% endif %}{% endif %}
+            </div>
+            {% endfor %}
         </div>
     </div>
+    {% endfor %}
+
+    <!-- Navigation buttons -->
+    <div class="mt-4 mb-4">
+        <a href="{% url 'onlinecourse:index' %}"
+           class="btn btn-primary">Back to Home</a>
+        <a href="{% url 'onlinecourse:course_details' course.id %}"
+           class="btn btn-secondary ml-2">Back to Course</a>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.min.js"></script>
 </body>
 </html>
